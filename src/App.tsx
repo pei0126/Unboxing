@@ -286,6 +286,15 @@ export default function App() {
         <span className="font-bold hidden sm:inline">重新設定</span>
       </button>
 
+      <button 
+        onClick={handleShareGame}
+        className="absolute top-4 right-4 p-3 text-[#8ca38f] hover:bg-[#e8ede9] rounded-full transition-colors flex items-center gap-2"
+        title="複製盲盒連結給朋友"
+      >
+        <span className="font-bold hidden sm:inline">分享給朋友</span>
+        <Share2 size={20} />
+      </button>
+
       <header className="mb-8 md:mb-10 text-center z-10 max-w-lg mt-6 md:mt-10 px-2">
         <h1 className="text-3xl md:text-5xl font-bold gold-text mb-2 md:mb-4 tracking-wider">
           {config.title || '你的專屬盲盒'}
