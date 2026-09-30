@@ -30,6 +30,23 @@ export default function App() {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const d = params.get('d');
+    if (d) {
+      try {
+        const decoded = JSON.parse(decodeURIComponent(atob(d))) as GameConfig;
+        setConfig(decoded);
+        setOptionsList(decoded.options.map((opt, i) => ({ id: i.toString(), text: opt })));
+        const count = decoded.gridSize * decoded.gridSize;
+        setGameCards(generateGridOptions(decoded.options, count));
+        setIsConfiguring(false);
+      } catch(e) {
+        console.error("Invalid share link");
+      }
+    }
+  }, []);
+
   const handleAddOption = () => {
     setOptionsList([...optionsList, { id: Date.now().toString(), text: '' }]);
   };
@@ -62,6 +79,24 @@ export default function App() {
     setTimeout(() => {
       setResult(option);
     }, 600); 
+  };
+
+  const handleShareGame = async () => {
+    const validOptions = optionsList.map(o => o.text.trim()).filter(o => o);
+    if(validOptions.length === 0) {
+      alert("請至少輸入一個選項喔！");
+      return;
+    }
+    const currentConfig = { ...config, options: validOptions };
+    const encoded = btoa(encodeURIComponent(JSON.stringify(currentConfig)));
+    const url = `${window.location.origin}${window.location.pathname}?d=${encoded}`;
+    
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('已複製「盲盒遊戲連結」！快貼給朋友讓他們刮刮看吧！');
+    } catch (e) {
+      alert('複製失敗，請手動複製。');
+    }
   };
 
   const resetGame = () => {
@@ -208,13 +243,23 @@ export default function App() {
               </button>
             </div>
 
-            <button 
-              onClick={startGame}
-              className="w-full py-4 bg-[#8ca38f] hover:bg-[#7b947e] text-white font-bold text-xl hand-drawn-btn shadow-lg shadow-[#dce5df] flex items-center justify-center gap-2 mt-6"
-            >
-              <Wand2 size={24} />
-              開始生成盲盒
-            </button>
+            <div className="flex flex-col gap-3 mt-6">
+              <button 
+                onClick={startGame}
+                className="w-full py-4 bg-[#8ca38f] hover:bg-[#7b947e] text-white font-bold text-xl hand-drawn-btn shadow-lg shadow-[#dce5df] flex items-center justify-center gap-2"
+              >
+                <Wand2 size={24} />
+                自己先刮刮看
+              </button>
+
+              <button 
+                onClick={handleShareGame}
+                className="w-full py-3 bg-[#f4f7f5] hover:bg-[#e8ede9] text-[#5c7a65] border-2 border-[#dce5df] font-bold text-lg hand-drawn-btn flex items-center justify-center gap-2 transition-colors"
+              >
+                <Share2 size={20} />
+                產生連結傳給朋友刮
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -231,7 +276,10 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-4 select-none relative overflow-hidden">
       <button 
-        onClick={() => setIsConfiguring(true)}
+        onClick={() => {
+          window.history.pushState({}, '', window.location.pathname);
+          setIsConfiguring(true);
+        }}
         className="absolute top-4 left-4 p-3 text-[#8ca38f] hover:bg-[#e8ede9] rounded-full transition-colors flex items-center gap-2"
       >
         <ArrowLeft size={20} />
