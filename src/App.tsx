@@ -4,6 +4,7 @@ import { generateGridOptions } from './utils/shuffle';
 import type { GameConfig } from './types';
 import { Sparkles, Wand2, ArrowLeft, Share2, RotateCcw, Globe, Image, MessageCircle, AtSign, Copy, Camera, X, Plus, Trash2 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import LZString from 'lz-string';
 
 export default function App() {
   const [config, setConfig] = useState<GameConfig>({
@@ -35,12 +36,34 @@ export default function App() {
     const d = params.get('d');
     if (d) {
       try {
-        const decoded = JSON.parse(decodeURIComponent(atob(d))) as GameConfig;
-        setConfig(decoded);
-        setOptionsList(decoded.options.map((opt, i) => ({ id: i.toString(), text: opt })));
-        const count = decoded.gridSize * decoded.gridSize;
-        setGameCards(generateGridOptions(decoded.options, count));
-        setIsConfiguring(false);
+        let newConfig: GameConfig | null = null;
+        
+        // 嘗試用 lz-string 解析 (新格式)
+        const decompressed = LZString.decompressFromEncodedURIComponent(d);
+        if (decompressed) {
+          const parsed = JSON.parse(decompressed);
+          if (Array.isArray(parsed)) {
+            newConfig = {
+              gridSize: parsed[0],
+              title: parsed[1],
+              subtitle: parsed[2],
+              options: parsed[3]
+            };
+          }
+        }
+        
+        // 兼容舊格式
+        if (!newConfig) {
+          newConfig = JSON.parse(decodeURIComponent(atob(d))) as GameConfig;
+        }
+
+        if (newConfig) {
+          setConfig(newConfig);
+          setOptionsList(newConfig.options.map((opt, i) => ({ id: i.toString(), text: opt })));
+          const count = newConfig.gridSize * newConfig.gridSize;
+          setGameCards(generateGridOptions(newConfig.options, count));
+          setIsConfiguring(false);
+        }
       } catch(e) {
         console.error("Invalid share link");
       }
@@ -87,13 +110,15 @@ export default function App() {
       alert("請至少輸入一個選項喔！");
       return;
     }
-    const currentConfig = { ...config, options: validOptions };
-    const encoded = btoa(encodeURIComponent(JSON.stringify(currentConfig)));
+    
+    // 將資料壓縮成陣列格式大幅縮減體積 [gridSize, title, subtitle, options]
+    const compactData = [config.gridSize, config.title, config.subtitle, validOptions];
+    const encoded = LZString.compressToEncodedURIComponent(JSON.stringify(compactData));
     const url = `${window.location.origin}${window.location.pathname}?d=${encoded}`;
     
     try {
       await navigator.clipboard.writeText(url);
-      alert('已複製「盲盒遊戲連結」！快貼給朋友讓他們刮刮看吧！');
+      alert('已複製「盲盒遊戲連結」！快貼給朋友讓他們刮刮看吧！\n(網址已經大幅縮短囉！)');
     } catch (e) {
       alert('複製失敗，請手動複製。');
     }
