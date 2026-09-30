@@ -118,7 +118,7 @@ export default function App() {
     
     try {
       await navigator.clipboard.writeText(url);
-      alert('已複製「盲盒遊戲連結」！快貼給朋友讓他們刮刮看吧！\n(網址已經大幅縮短囉！)');
+      alert('已複製「盲盒遊戲連結」！快貼給朋友讓他們刮刮看吧！');
     } catch (e) {
       alert('複製失敗，請手動複製。');
     }
