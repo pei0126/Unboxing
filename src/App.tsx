@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ScratchCard } from './components/ScratchCard';
 import { generateGridOptions } from './utils/shuffle';
 import type { GameConfig } from './types';
@@ -30,7 +30,7 @@ export default function App() {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const d = params.get('d');
     if (d) {
